@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from models import Users
 from starlette import status
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter()
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -43,3 +44,18 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
     db.add(create_user_model)
     db.commit()
 
+@router.post("/login", status_code=status.HTTP_200_OK)
+async def login_user_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
+    user = authenticate_user(form_data.username, form_data.password, db)
+    if not user:
+        return "failed authentication"
+    return "successful authentication"
+
+
+def authenticate_user(username: str, password: str, db):
+    user = db.query(Users).filter(Users.username == username).first()
+    if not user:
+        return False
+    if not bcrypt_context.verify(password, user.hashed_password):
+        return False
+    return True

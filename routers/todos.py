@@ -29,8 +29,16 @@ class TodoRequest(BaseModel):
 def read_all_products(db: db_dependency):
     return db.query(Items).all()
 
+@router.get("/search-product/{search_string}", status_code=status.HTTP_200_OK)
+def search_products(db: db_dependency, search_string: str):
+    todo_model = db.query(Items).filter(Items.title.ilike(f"%{search_string}%")).all()
+    if todo_model is not None:
+        return todo_model
+    else:
+        raise HTTPException(status_code=404, detail="Not found")
+
 @router.get("/product/{product_id}", status_code=status.HTTP_200_OK)
-def get_product(db: db_dependency, product_id: int = Path(gt=0)):
+def get_product_detail(db: db_dependency, product_id: int = Path(gt=0)):
     todo_model = db.query(Items).filter(Items.id == product_id).first()
     if todo_model is not None:
         return todo_model
