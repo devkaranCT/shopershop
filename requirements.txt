@@ -15,3 +15,4 @@ uvicorn==0.38.0
 SQLAlchemy
 passlib
 python-multipart
+python-jose[cryptography]
