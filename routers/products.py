@@ -5,9 +5,12 @@ from database import SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session
 from starlette import status
+from .auth import get_current_user
 
 
-router = APIRouter()
+router = APIRouter(
+    tags=["products"],
+)
 
 
 def get_db():
@@ -18,6 +21,7 @@ def get_db():
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 class TodoRequest(BaseModel):
     title: str = Field(min_length=3, max_length=100)
@@ -46,8 +50,10 @@ def get_product_detail(db: db_dependency, product_id: int = Path(gt=0)):
         raise HTTPException(status_code=404, detail="Not found")
 
 @router.post("/add-product", status_code=status.HTTP_201_CREATED )
-def add_product(db: db_dependency, todo_request: TodoRequest):
-    todo_model = Items(**todo_request.model_dump())
+def add_product(user: user_dependency, db: db_dependency, todo_request: TodoRequest):
+    if user is None:
+        raise HTTPException(status_code=401, detail="authentication failed")
+    todo_model = Items(**todo_request.model_dump(), owner_id= user.get("id"))
     db.add(todo_model)
     db.commit()
 
