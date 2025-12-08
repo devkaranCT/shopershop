@@ -1,3 +1,5 @@
+from datetime import timedelta, datetime, timezone
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.testing.pickleable import User
@@ -8,8 +10,14 @@ from typing import Annotated
 from models import Users
 from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt
+
 
 router = APIRouter()
+
+SECRET_KEY = 'cc5c969ce424a8379a76328a6c0f5149d9826bab50a1fe71c1abbaf607ec6bd8'
+ALGORITHM = 'HS256'
+
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_db():
@@ -49,8 +57,8 @@ async def login_user_for_access_token(form_data: Annotated[OAuth2PasswordRequest
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         return "failed authentication"
-    return "successful authentication"
-
+    token = create_access_token(user.username, user.id, timedelta(minutes=30))
+    return {"access_token": token, "token_type": "bearer"}
 
 def authenticate_user(username: str, password: str, db):
     user = db.query(Users).filter(Users.username == username).first()
@@ -58,4 +66,10 @@ def authenticate_user(username: str, password: str, db):
         return False
     if not bcrypt_context.verify(password, user.hashed_password):
         return False
-    return True
+    return user
+
+def create_access_token(username: str, user_id: int, expires_delta: timedelta):
+    encoded_jwt = {'sub': username, "id": user_id}
+    expires = datetime.now(timezone.utc) + expires_delta
+    encoded_jwt.update({'exp': expires})
+    return jwt.encode(encoded_jwt, SECRET_KEY, algorithm=ALGORITHM)
