@@ -13,6 +13,7 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.38.0
 SQLAlchemy
-passlib
 python-multipart
 python-jose[cryptography]
+passlib
+bcrypt
