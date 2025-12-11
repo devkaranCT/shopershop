@@ -1,9 +1,7 @@
 from datetime import timedelta, datetime, timezone
 from http.client import HTTPException
-
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy.testing.pickleable import User
 from passlib.context import CryptContext
 from database import SessionLocal
 from sqlalchemy.orm import Session
@@ -13,7 +11,6 @@ from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
 
-
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
@@ -22,7 +19,9 @@ router = APIRouter(
 SECRET_KEY = 'cc5c969ce424a8379a76328a6c0f5149d9826bab50a1fe71c1abbaf607ec6bd8'
 ALGORITHM = 'HS256'
 
+# This class from passlib manages all password hashing and verification operations
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# class provided by fastapi.security. it tells from where to look for the token and what to do if token in missing
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def get_db():
@@ -56,6 +55,7 @@ async def create_user(db: db_dependency, create_user_request: CreateUserRequest)
 
     db.add(create_user_model)
     db.commit()
+    return { "message": "User created successfully!" }
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login_user_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
@@ -86,7 +86,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         user_id: int = payload['id']
         if username is None  or user_id is None:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code= status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials"
             )
         return { 'username': username, 'user_id': user_id }

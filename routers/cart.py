@@ -40,9 +40,6 @@ def read_all_products_added_to_cart(user: user_dependency, db: db_dependency):
 def add_product_to_cart(user: user_dependency, db: db_dependency, todo_request: TodoRequest):
     if user is None:
         raise HTTPException(status_code=401, detail="authentication failed")
-    print(user)
-    print(user.get("username"))
-    print(user.get("user_id"))
     todo_model = Items(**todo_request.model_dump(), owner_id= user.get("user_id"))
     db.add(todo_model)
     db.commit()
